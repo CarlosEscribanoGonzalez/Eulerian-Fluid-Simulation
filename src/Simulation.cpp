@@ -1,6 +1,6 @@
 ﻿#include "Scene.h"
-
 #include "Numeric/PCGSolver.h"
+
 namespace asa
 {
 #pragma region STRUCTS & ENUMS
@@ -22,7 +22,7 @@ struct Wind {
 };
 #pragma endregion
 
-#pragma region FUNCIONES AUXILIARES
+#pragma region AUX FUNCTIONS
 static bool isInDomain(Vector2 pos, Vector2 domainX, Vector2 domainY)
 {
     bool in_x = pos.x >= domainX.x && pos.x <= domainX.y;
@@ -33,16 +33,16 @@ static bool isInDomain(Vector2 pos, Vector2 domainX, Vector2 domainY)
 static void checkEmission(Index2 idx, const Emissor &emissor, const Grid2 &grid, Array2<Vector3> &ink,
         Array2<float> &velX, Array2<float> &velY)
 {
-    // Tinta:
+    //Ink:
     if (isInDomain(grid.getCellPos(idx), emissor.domainX, emissor.domainY))
         ink[idx] = emissor.ink;
-    // Velocidades horizontales:
+    //Horizontal velocities:
     if (isInDomain(grid.getFacePosX(idx), emissor.domainX, emissor.domainY))
         velX[idx] = emissor.speedX;
     Index2 nextIdx_x{idx.x + 1, idx.y};
     if (isInDomain(grid.getFacePosX(nextIdx_x), emissor.domainX, emissor.domainY))
         velX[nextIdx_x] = emissor.speedX;
-    // Velocidades verticales:
+    //Vertical velocities:
     if (isInDomain(grid.getFacePosY(idx), emissor.domainX, emissor.domainY))
         velY[idx] = emissor.speedY;
     Index2 nextIdx_y{idx.x, idx.y + 1};
@@ -53,13 +53,13 @@ static void checkEmission(Index2 idx, const Emissor &emissor, const Grid2 &grid,
 static void checkWind(Index2 idx, const Wind& wind, const Grid2 &grid, 
     Array2<float> &velX, Array2<float> &velY, float dt, bool override = false)
 {
-    // Velocidades horizontales:
+    //Horizontal velocities:
     if (isInDomain(grid.getFacePosX(idx), wind.domainX, wind.domainY))
         velX[idx] = override ? wind.speedX : velX[idx] + wind.speedX * dt;
     Index2 nextIdx_x{idx.x + 1, idx.y};
     if (isInDomain(grid.getFacePosX(nextIdx_x), wind.domainX, wind.domainY))
         velX[nextIdx_x] = override ? wind.speedX : velX[nextIdx_x] + wind.speedX * dt;
-    // Velocidades verticales:
+    //Vertical velocities:
     if (isInDomain(grid.getFacePosY(idx), wind.domainX, wind.domainY))
         velY[idx] = override ? wind.speedY : velY[idx] + wind.speedY * dt;
     Index2 nextIdx_y{idx.x, idx.y + 1};
@@ -82,15 +82,15 @@ static void clampPosition(Vector2& pos, const Grid2& grid)
 
 template<class T>
 static T bilerp_center(Vector2 &pos, const Grid2 &grid, const Array2<T> &values) {
-    //Clampeo de posición a una dentro del dominio
+    //Position is clamped to ensure it's in the domain
     clampPosition(pos, grid);
-    //Obtención de coordenadas en relación al centro de las celdas
+    //Obtaining coordinates relative to the center of the cells
     Vector2 coord = grid.getCellIndex(pos);
-    float floor_x = max(floor(coord.x), 0.0f); //Coge la celda cuyo centro está a la izquierda de pos
-    float floor_y = max(floor(coord.y), 0.0f); //Coge la celda cuyo centro está debajo de pos
+    float floor_x = max(floor(coord.x), 0.0f); //Takes the cell whose center is to the left of pos
+    float floor_y = max(floor(coord.y), 0.0f); //Takes the cell whose center is below pos
     Index2 idx{(uint)floor_x, (uint)floor_y};
-    uint nextIdx_x = min(idx.x + 1, grid.getSize().x - 1); //Celda derecha
-    uint nextIdx_y = min(idx.y + 1, grid.getSize().y - 1); //Celda superior
+    uint nextIdx_x = min(idx.x + 1, grid.getSize().x - 1); //Right cell
+    uint nextIdx_y = min(idx.y + 1, grid.getSize().y - 1); //Upper cell
     float tx = clamp(coord.x - floor_x, 0.0f, 1.0f);
     float ty = clamp(coord.y - floor_y, 0.0f, 1.0f);
     return bilerp(values[idx], values[{nextIdx_x, idx.y}], 
@@ -121,51 +121,51 @@ bool enableWind = false;
 
 void Fluid::fluidAdvection(const float dt)
 {
-    // TINTA:
+    //INK:
     {
         Array2<Vector3> inkCopy = inkRGB;
         for (uint i = 0; i < grid.getSize().x; i++) {
             for (uint j = 0; j < grid.getSize().y; j++) {
                 Index2 idx{i, j};
-                // Obtención de velocidad y posición:
+                //Velocity and position are obtained:
                 Vector2 currentPos = grid.getCellPos(idx);
                 float currentSpeed_x = 0.5 * (velocityX[idx] + velocityX[{i + 1, j}]);
                 float currentSpeed_y = 0.5 * (velocityY[idx] + velocityY[{i, j + 1}]);
                 Vector2 currentVel{currentSpeed_x, currentSpeed_y};
-                // Cálculo de posición previa y actualización:
+                //Compute prev position and update:
                 Vector2 prevPos = currentPos - dt * currentVel;
                 inkRGB[idx] = bilerp_center(prevPos, grid, inkCopy);
             }
         }
     }
-    // VELOCIDAD:
+    //VELOCITY:
     {
         Array2<float> velXCopy = velocityX;
         Array2<float> velYCopy = velocityY;
-        // Componentes u:
+        //u components:
         for (uint i = 0; i < grid.getSizeFacesX().x; i++) {
             for (uint j = 0; j < grid.getSizeFacesX().y; j++) {
                 Index2 idx{i, j};
-                // Obtención de velocidad y posición:
+                //Velocity and position are obtained:
                 Vector2 currentPos = grid.getFacePosX(idx);
                 float u = velXCopy[idx];
                 float v = bilerp_face(currentPos, grid, velYCopy, Vertical);
                 Vector2 currentVel{u, v};
-                // Cálculo de posición previa y actualización:
+                //Compute prev position and update:
                 Vector2 prevPos = currentPos - dt * currentVel;
                 velocityX[idx] = bilerp_face(prevPos, grid, velXCopy, Horizontal);
             }
         }
-        // Componentes v:
+        //v components:
         for (uint i = 0; i < grid.getSizeFacesY().x; i++) {
             for (uint j = 0; j < grid.getSizeFacesY().y; j++) {
                 Index2 idx{i, j};
-                // Obtención de velocidad y posición:
+                //Velocity and position are obtained:
                 Vector2 currentPos = grid.getFacePosY(idx);
                 float u = bilerp_face(currentPos, grid, velXCopy, Horizontal);
                 float v = velYCopy[idx];
                 Vector2 currentVel{u, v};
-                // Cálculo de posición previa y actualización:
+                //Compute prev position and update:
                 Vector2 prevPos = currentPos - dt * currentVel;
                 velocityY[idx] = bilerp_face(prevPos, grid, velYCopy, Vertical);
             }
@@ -193,13 +193,13 @@ void Fluid::fluidEmission()
 void Fluid::fluidVolumeForces(const float dt)
 {
     if (Scene::testcase >= Scene::SMOKE) {
-        //Gravedad:
+        //Gravity:
         for (uint i = 0; i < grid.getSizeFacesY().x; i++) {
             for (uint j = 0; j < grid.getSizeFacesY().y; j++) {
                 velocityY[{i, j}] += Scene::kGravity * dt;
             }
         }
-        //Dominios de viento:
+        //Wind domains:
         if (!enableWind) return;
         Wind wind1{{-2, 2}, {-0.1, 0.1}, -5, 0};
         Wind wind2{{-0.1, 0.1}, {0, 2}, 0, -1};
@@ -218,7 +218,7 @@ void Fluid::fluidViscosity(const float dt)
     if (Scene::testcase >= Scene::SMOKE) {
         float deltaX_2 = grid.getDx().x * grid.getDx().x;
         float deltaY_2 = grid.getDx().y * grid.getDx().y;
-        //Componentes u:
+        //u components:
         Array2<float> velXCopy = velocityX;
         for (uint i = 0; i < grid.getSizeFacesX().x; i++) {
             for (uint j = 0; j < grid.getSizeFacesX().y; j++) {
@@ -233,7 +233,7 @@ void Fluid::fluidViscosity(const float dt)
                 velocityX[idx] += viscosity;
             }
         }
-        //Componentes v:
+        //v components:
         Array2<float> velYCopy = velocityY;
         for (uint i = 0; i < grid.getSizeFacesY().x; i++) {
             for (uint j = 0; j < grid.getSizeFacesY().y; j++) {
@@ -254,7 +254,7 @@ void Fluid::fluidViscosity(const float dt)
 void Fluid::fluidPressureProjection(const float dt)
 {
     if (Scene::testcase >= Scene::SMOKE) {
-        //Poner la velocidad en las fronteras a 0:
+        //Border velocity = 0:
         for (uint i = 0; i < grid.getSizeFacesX().y; i++) {
             velocityX[{0, i}] = 0;
             velocityX[{grid.getSizeFacesX().x - 1, i}] = 0;
@@ -263,12 +263,12 @@ void Fluid::fluidPressureProjection(const float dt)
             velocityY[{i, 0}] = 0;
             velocityY[{i, grid.getSizeFacesY().y - 1}] = 0;
         }
-        // Precisión y tolerancia dependiendo de si queremos velocidad o exactitud
+        //Precision and tolerance depending if we want speed or accuracy
         // float => tolerance_factor = 1e-3, iterations = 200
         // double => tolerance_factor = 1e-6, iterations = 200
         PCGSolver<float> solver;
         solver.set_solver_parameters(1e-3, 200);
-        //Llenar RHS:
+        //Fill RHS:
         std::vector<float> rhs(grid.getSize().x * grid.getSize().y);
         for (uint i = 0; i < grid.getSize().x; i++) {
             for (uint j = 0; j < grid.getSize().y; j++) {
@@ -281,7 +281,7 @@ void Fluid::fluidPressureProjection(const float dt)
                 rhs[i + grid.getSize().x * j] = div;
             }
         }
-        //Llenar A:
+        //Fill A:
         if (!isAInitialized) {
             float dx2 = grid.getDx().x * grid.getDx().x;
             float dy2 = grid.getDx().y * grid.getDx().y;
@@ -312,13 +312,13 @@ void Fluid::fluidPressureProjection(const float dt)
             }
             isAInitialized = true;
         }
-        //Llenar P:
+        //Fill P:
         std::vector<float> P(grid.getSize().x * grid.getSize().y);
-        // Solve:
+        //Solve:
         float residual;
         int iter;
         solver.solve(A, rhs, P, residual, iter);
-        // Aplicar las P a la rejilla:
+        //Pressure is applied to the grid:
         for (uint j = 0; j < pressure.getSize().y; j++) {
             for (uint i = 0; i < pressure.getSize().x; i++) {
                 pressure[{i, j}] = P[i + grid.getSize().x * j];

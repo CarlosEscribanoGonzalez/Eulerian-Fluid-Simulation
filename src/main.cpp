@@ -29,8 +29,6 @@ void keyboardfunc(unsigned char key, int x, int y)
         case 's':
             gScene.pause();
             break;
-        case 'p':
-            // draw pressure
         default:
             break;
     }

@@ -6,7 +6,7 @@
 namespace asa
 {
 int Scene::testcase = Scene::SMOKE;
-bool Scene::pauseFlag = true;
+bool Scene::pauseFlag = false;
 uint Scene::nCellsX = 100;
 uint Scene::nCellsY = 100;
 float Scene::step = 0.01f;
