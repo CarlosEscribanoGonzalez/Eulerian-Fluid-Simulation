@@ -13,6 +13,10 @@ Implementation of a 2D Eulerian fluid simulator that solves the incompressible *
   * Divergence of the velocity field computed on the grid
   * Pressure Poisson system solved with a preconditioned conjugate gradient solver
   * Pressure gradient subtracted from the velocities to make the fluid incompressible
+<p align = "center">
+ <img width="300" height="300" alt="Simulation" src="https://github.com/user-attachments/assets/36bc2f2b-2d3c-4dd1-b63f-775bc14a590e" />
+ <img width="300" height="300" alt="Simulation_wind" src="https://github.com/user-attachments/assets/eaf922c6-1d47-46e7-bb58-54454c758928" />
+</p>
 
 ## Configurable parameters
 Gravity, fluid density, viscosity, time step, wind and the grid dimensions (number of cells per axis) can be changed in `Scene.cpp`. Trying different resolutions shows how the cell size affects both the look of the simulation and the computation time.
