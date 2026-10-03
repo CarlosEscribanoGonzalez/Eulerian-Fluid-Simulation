@@ -23,6 +23,7 @@ public:
     static float kDensity;
     static float kGravity;
     static float kViscosity;
+    static bool kEnableWind;
 
 public:
     Scene();

@@ -117,7 +117,6 @@ static T bilerp_face(Vector2 &pos, const Grid2 &grid, const Array2<T> &values, A
 
 SparseMatrix<float> A(1, 5);
 bool isAInitialized = false;
-bool enableWind = false;
 
 void Fluid::fluidAdvection(const float dt)
 {
@@ -200,7 +199,7 @@ void Fluid::fluidVolumeForces(const float dt)
             }
         }
         //Wind domains:
-        if (!enableWind) return;
+        if (!Scene::kEnableWind) return;
         Wind wind1{{-2, 2}, {-0.1, 0.1}, -5, 0};
         Wind wind2{{-0.1, 0.1}, {0, 2}, 0, -1};
         for (uint i = 0; i < grid.getSize().x; i++) {

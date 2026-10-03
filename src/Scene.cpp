@@ -13,6 +13,7 @@ float Scene::step = 0.01f;
 float Scene::kDensity = 1.0f;
 float Scene::kGravity = -1.0f;
 float Scene::kViscosity = 0.001f;
+bool Scene::kEnableWind = false;
 
 Scene::Scene()
     : fluid(nullptr)
