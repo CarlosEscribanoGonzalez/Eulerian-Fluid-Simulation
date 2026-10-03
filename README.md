@@ -1,5 +1,5 @@
 ## Overview
-Implementation of a 2D Eulerian fluid simulator that solves the incompressible **Navier-Stokes equations** on a staggered (MAC) grid, written in C++. Each time step handles the terms of the equations one at a time: advection, external forces, viscosity and a pressure projection that makes the fluid incompressible. Colored ink is advected along the fluid to visualize the flow. The domain is fixed and solid on all four sides.
+Implementation of a 2D eulerian fluid simulator that solves the incompressible **Navier-Stokes equations** on a staggered (MAC) grid, written in C++. Each time step handles the terms of the equations one at a time: advection, external forces, viscosity and a pressure projection that makes the fluid incompressible. Colored ink is advected along the fluid to visualize the flow. The domain is fixed and solid on all four sides.
 
 ## Features
 * **Ink emission:** several colored emitters (RGB) inject ink and velocity into the fluid, producing plumes of smoke
